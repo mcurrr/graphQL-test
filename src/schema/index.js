@@ -8,6 +8,7 @@ const typeDefs = `
         url: String!
         description: String!
         postedBy: User
+        votes: [Vote!]!
     }
 
     type Query {
@@ -18,12 +19,14 @@ const typeDefs = `
         createLink(url: String!, description: String!): Link
         createUser(name: String!, authProvider: AuthProviderSignupData!): User
         signinUser(email: AUTH_PROVIDER_EMAIL): SigninPayload!
+        createVote(linkId: ID!): Vote
     }
 
     type User {
         id: ID!
         name: String!
         email: String
+        votes: [Vote!]!
     }
 
     input AuthProviderSignupData {
@@ -38,6 +41,12 @@ const typeDefs = `
     type SigninPayload {
         token: String
         user: User
+    }
+
+    type Vote {
+        id: ID!
+        user: User!
+        link: Link!
     }
 `;
 
