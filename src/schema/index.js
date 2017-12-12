@@ -48,6 +48,37 @@ const typeDefs = `
         user: User!
         link: Link!
     }
+
+    type Subscription {
+        Link(filter: SubscriptionFilter): LinkSubscriptionPayload
+        User(filter: SubscriptionFilter): UserSubscriptionPayload
+        Vote(filter: SubscriptionFilter): VoteSubscriptionPayload
+    }
+
+    input SubscriptionFilter {
+        mutation_in: [_ModelMutationType!]
+    }
+
+    type LinkSubscriptionPayload {
+        mutation: _ModelMutationType!
+        node: Link
+    }
+
+    type UserSubscriptionPayload {
+        mutation: _ModelMutationType!
+        node: User
+    }
+
+    type VoteSubscriptionPayload {
+        mutation: _ModelMutationType!
+        node: Vote
+    }
+
+    enum _ModelMutationType {
+        CREATED
+        UPDATED
+        DELETED
+    }
 `;
 
 // Generate the schema object from your types definition.

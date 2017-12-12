@@ -1,6 +1,6 @@
 const { ObjectID } = require('mongodb')
-
 const { URL } = require('url');
+const pubsub = require('../pubsub');
 
 class ValidationError extends Error {
     constructor(message, field) {
@@ -24,11 +24,13 @@ module.exports = {
         },
     },
     Mutation: {
-        createLink: async (root, data, { mongo: { Links }, user } ) => {
+        createLink: async (root, data, { mongo: { Links }, user }) => {
             assertValidLink(data);
             const newLink = Object.assign({ postedById: user && user._id }, data)
             const response = await Links.insert(newLink);
-            return Object.assign({ id: response.insertedIds[0] }, newLink);
+            newLink.id = response.insertedIds[0];
+            pubsub.publish('Link', { Link: { mutation: 'CREATED', node: newLink } });
+            return newLink;
         },
         createUser: async (root, data, { mongo: { Users } }) => {
             const newUser = {
@@ -37,7 +39,9 @@ module.exports = {
                 password: data.authProvider.email.password,
             };
             const response = await Users.insert(newUser);
-            return Object.assign({id: response.insertedIds[0]}, newUser);
+            newUser.id = response.insertedIds[0];
+            pubsub.publish('User', { User: { mutation: 'CREATED', node: newUser } });
+            return newUser;
         },
         signinUser: async (root, data, { mongo: { Users } }) => {
             const user = await Users.findOne({email: data.email.email});
@@ -51,7 +55,9 @@ module.exports = {
                 linkId: new ObjectID(data.linkId),
             };
             const response = await Votes.insert(newVote);
-            return Object.assign({id: response.insertedIds[0]}, newVote);
+            newVote.id = response.insertedIds[0];
+            pubsub.publish('Vote', { Vote: { mutation: 'CREATED', node: newVote } });
+            return newVote;
         },
     },
     Link: {
@@ -76,6 +82,17 @@ module.exports = {
         },
         link: async ({ linkId }, data, { mongo: { Links } }) => {
             return await Links.findOne({ _id: linkId });
+        },
+    },
+    Subscription: {
+        Link: {
+            subscribe: () => pubsub.asyncIterator('Link'),
+        },
+        User: {
+            subscribe: () => pubsub.asyncIterator('User'),
+        },
+        Vote: {
+            subscribe: () => pubsub.asyncIterator('Vote'),
         },
     },
 };
